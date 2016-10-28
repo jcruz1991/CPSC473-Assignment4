@@ -4,8 +4,7 @@ var express = require('express'),
     mongodb = require('mongodb'),
     mongoose = require('mongoose'),
     app = express(),
-    MongoClient = mongodb.MongoClient,
-    url = 'mongodb://localhost:/test';
+    MongoClient = mongodb.MongoClient;
 
 
 var Question = require('./models/newQuestion.js');
@@ -23,6 +22,15 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
+// Connect to the database
+mongoose.Promise = global.Promise;
+mongoose.connect('mongodb://localhost:27017/test');
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function() {
+    console.log("Connected to Database");
+});
+
 // Home Page
 app.get('/', function(req, res) {
     res.render('index');
@@ -30,52 +38,44 @@ app.get('/', function(req, res) {
 
 // Posting new question
 app.post('/question', function(req, res) {
-    var question = JSON.stringify(req.body.newQuestion);
-    var answer = JSON.stringify(req.body.answer);
-    var triviaQuestion = new Question({
-        question: question,
-        answer: answer
-    });
-    // Connect to database
-    MongoClient.connect(url, function(err, db) {
+    var triviaQuestion = new Question();
+    triviaQuestion.question = req.body.newQuestion;
+    triviaQuestion.answer = req.body.answer;
+
+    console.log("Posting new trivia question");
+
+    triviaQuestion.save(function(err, savedQuestion) {
         if (err) {
             console.log(err);
-        } else {
-            console.log('Connected to database');
-
-            // Get the documents collection
-            var collection = db.collection('trivia');
-
-            // Insert new question into database
-            triviaQuestion.save(function(err){
-              if(err) {
-                console.log(err);
-              }
-              else {
-                console.log('Inserted new question into database');
-              }
-            });
+            return res.status(500).send();
         }
-        // CLose connection after inserting new trivia question
-        db.close();
+        return res.status(200).send();
+    });
+});
+
+
+app.get('/question', function(req, res) {
+  /*
+    var resultArray = [];
+    var cursor = db.collection('questions').find();
+    cursor.forEach(function(doc, err) {
+        resultArray.push();
+    });
+    res.json(resultArray);
+    console.log(resultArray);
+
+*/
+    Question.find({}, function(err, questions) {
+        var excuseMap = {};
+        questions.forEach(function(question) {
+            excuseMap[excuse._id] = excuse;
+        });
+        res.json(excuseMap);
+        console.log(excuseMap);
     });
 });
 
 /*
-app.get('/question', function(req, res) {
-  var resultArray = [];
-
-  mongo.connect(url, function(err,db){
-    assert.equal(null, err);
-    var cursor = db.collection('new-question').find();
-    cursor.forEach(function(doc, err){
-      asser.equals(null, err);
-      resultArray.push(doc);
-    });
-  });
-
-});
-
 app.post('/answer', function(req, res) {
 
 });
