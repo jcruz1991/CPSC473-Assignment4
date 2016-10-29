@@ -6,8 +6,6 @@ var express = require('express'),
     app = express(),
     MongoClient = mongodb.MongoClient;
 
-
-var Question = require('./models/newQuestion.js');
 app.use(express.static(__dirname + '/public'));
 
 // Create our Express-powered HTTP server
@@ -31,6 +29,9 @@ db.once('open', function() {
     console.log("Connected to Database");
 });
 
+
+var answerID = 0;
+
 // Home Page
 app.get('/', function(req, res) {
     res.render('index');
@@ -38,24 +39,25 @@ app.get('/', function(req, res) {
 
 // Posting new question
 app.post('/question', function(req, res) {
-    var triviaQuestion = new Question();
-    triviaQuestion.question = req.body.newQuestion;
-    triviaQuestion.answer = req.body.answer;
+    answerID = answerID + 1;
+    var collection = db.collection('questions');
+    var triviaQuestion = {
+        question: req.body.newQuestion,
+        answer: req.body.answer,
+        answer_id: answerID
+    };
 
-    console.log("Posting new trivia question");
-
-    triviaQuestion.save(function(err, savedQuestion) {
+    collection.insert([triviaQuestion], function(err, result) {
         if (err) {
             console.log(err);
-            return res.status(500).send();
+        } else {
+            console.log('Entered new question into db');
         }
-        return res.status(200).send();
     });
 });
 
-
+/*
 app.get('/question', function(req, res) {
-  /*
     var resultArray = [];
     var cursor = db.collection('questions').find();
     cursor.forEach(function(doc, err) {
@@ -63,8 +65,6 @@ app.get('/question', function(req, res) {
     });
     res.json(resultArray);
     console.log(resultArray);
-
-*/
     Question.find({}, function(err, questions) {
         var excuseMap = {};
         questions.forEach(function(question) {
@@ -74,6 +74,7 @@ app.get('/question', function(req, res) {
         console.log(excuseMap);
     });
 });
+*/
 
 /*
 app.post('/answer', function(req, res) {
